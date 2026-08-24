@@ -8,21 +8,20 @@ from pydantic import BaseModel
 
 app = FastAPI(title="JEI AI Customer & Product Management Suite")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "jei@2026")
 
 DB_FILE = "products_db.json"
 LEADS_DB = []
 
-# Default Starter Products if DB doesn't exist
 DEFAULT_PRODUCTS = [
     {
         "id": "1",
         "name": "Small Scale Rice Mill Machine (කුඩා පරිමාණ වී මෝල)",
         "category": "Rice Mill Machines",
-        "price": "Rs. 450,000 සිට ඉහළට (ධාරිතාව අනුව)",
+        "price": "Rs. 450,000 සිට ඉහළට",
         "image": "https://images.unsplash.com/photo-1586771107445-d3ca888129ff?w=600&q=80",
         "specs": "ධාරිතාව: 500kg - 1000kg/hr | විදුලිය: Single/Three Phase | කැඩීම අවමයි (<5%)",
         "description": "කුඩා පරිමාණ ව්‍යාපාර සහ ගොවිපල සඳහා ඉතා සුදුසුයි. අඩු විදුලි පරිභෝජනයකින් ඉහළ අස්වැන්නක් ලබා දේ."
@@ -67,17 +66,17 @@ def build_dynamic_system_prompt():
         catalog_text += f"""
 {idx}. PRODUCT: {p.get('name')}
    - Category: {p.get('category')}
-   - Price / Estimate: {p.get('price')}
-   - Specifications: {p.get('specs')}
+   - Price: {p.get('price')}
+   - Specs: {p.get('specs')}
    - Details: {p.get('description')}
    - Image Link: {p.get('image', '')}
 """
 
     prompt = f"""
-You are the Chief Technical Sales AI Assistant for "Janaka Engineering Industries (Pvt) Ltd" (JEI) - Sri Lanka.
+You are the Official Chief Technical Sales AI Assistant for "Janaka Engineering Industries (Pvt) Ltd" (JEI) - Sri Lanka.
 HOTLINE: +94 77 123 4567 | EMAIL: info@jei.lk | WEB: https://www.jei.lk
 
-CURRENT OFFICIAL PRODUCTS IN STOCK & SERVICES:
+CURRENT OFFICIAL PRODUCTS IN STOCK:
 {catalog_text}
 
 SERVICES: Custom mill layout design, islandwide delivery & installation, genuine spare parts, operator training.
@@ -89,10 +88,9 @@ CRITICAL INSTRUCTIONS:
    - If user asks in English -> Reply ONLY in professional ENGLISH.
 2. DOMAIN BOUNDARY:
    - Only answer questions related to JEI products and engineering machinery listed above.
-   - If asked about outside topics (politics, general knowledge, movies, homework), politely decline.
-3. PRODUCT RECOMMENDATION & IMAGES:
-   - When describing a specific product, if an Image Link is available, you can mention it or it will be formatted cleanly.
-   - Use bold titles, clean bullet points (•), and clear price/capacity details.
+   - If asked about outside topics (politics, general trivia, movies, homework), politely decline.
+3. FORMATTING:
+   - Always use bold headings, neat bullet points (•), and clear price/capacity details.
 """
     return prompt
 
@@ -104,9 +102,6 @@ def send_telegram_alert(text: str):
         except Exception:
             pass
 
-# ==========================================
-# 🎨 FRONTEND CHAT UI (WITH RICH PHOTO CARDS)
-# ==========================================
 FRONTEND_HTML = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -347,7 +342,7 @@ FRONTEND_HTML = """<!DOCTYPE html>
       
       <div class="quick-chips" id="quickChips">
         <button class="chip" onclick="quickSend('කුඩා පරිමාණ වී මෝල් වල විස්තර සහ මිල කියන්න')">🌾 කුඩා වී මෝල්</button>
-        <button class="chip" onclick="quickSend('Color Sorter යන්ත්‍ර වල විස්තර සහ photos මොනවාද?')">📦 Color Sorter</button>
+        <button class="chip" onclick="quickSend('Color Sorter යන්ත්‍ර වල විස්තර මොනවාද?')">📦 Color Sorter</button>
         <button class="chip" onclick="quickSend('ඔබ සතුව ඇති සියලුම නිෂ්පාදන මොනවාද?')">📋 All Products</button>
       </div>
 
@@ -389,11 +384,9 @@ FRONTEND_HTML = """<!DOCTYPE html>
     }
 
     function formatText(text) {
-      // Find URLs matching image patterns
-      let formatted = text
+      return text
         .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
         .replace(/\\n/g, '<br>');
-      return formatted;
     }
 
     function appendMsg(role, text, matchedProducts = []) {
@@ -443,10 +436,13 @@ FRONTEND_HTML = """<!DOCTYPE html>
         const data = await res.json();
         const botReply = data.reply || "ප්‍රතිචාරයක් නොලැබුණි.";
         appendMsg('bot', botReply, data.matched_products || []);
-        chatHistory.push({ role: 'user', content: text });
-        chatHistory.push({ role: 'model', content: botReply });
+        
+        if (res.ok) {
+          chatHistory.push({ role: 'user', content: text });
+          chatHistory.push({ role: 'model', content: botReply });
+        }
       } catch (err) {
-        appendMsg('bot', 'සමාවන්න, සම්බන්ධතාවයේ දෝෂයක් සිදු විය.');
+        appendMsg('bot', 'සමාවන්න, සබඳතාවයේ දෝෂයක් සිදු විය: ' + err.message);
       }
     }
 
@@ -459,9 +455,6 @@ FRONTEND_HTML = """<!DOCTYPE html>
 </html>
 """
 
-# ==========================================
-# 🛠️ ADMIN DASHBOARD HTML (PRODUCTS & LEADS)
-# ==========================================
 ADMIN_HTML = """<!DOCTYPE html>
 <html>
 <head>
@@ -476,16 +469,13 @@ ADMIN_HTML = """<!DOCTYPE html>
     .card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 24px; }
     h2 { font-size: 16px; color: #0284c7; margin-bottom: 16px; font-weight: 600; }
     
-    /* Product Form */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .form-full { grid-column: span 2; }
     label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; }
-    input, textarea, select { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 13.5px; outline: none; }
+    input, textarea { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 13.5px; outline: none; }
     input:focus, textarea:focus { border-color: #0284c7; }
     .btn-add { background: #0284c7; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; }
-    .btn-add:hover { background: #0369a1; }
     
-    /* Product List Grid */
     .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 14px; }
     .prod-card { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #fafafa; display: flex; flex-direction: column; }
     .prod-card img { width: 100%; height: 140px; object-fit: cover; background: #e2e8f0; }
@@ -495,9 +485,7 @@ ADMIN_HTML = """<!DOCTYPE html>
     .prod-details .price { font-size: 12px; font-weight: 600; color: #16a34a; margin-bottom: 6px; }
     .prod-details p { font-size: 11.5px; color: #64748b; line-height: 1.4; flex: 1; }
     .btn-del { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; margin-top: 10px; align-self: flex-start; }
-    .btn-del:hover { background: #fecaca; }
 
-    /* Leads Table */
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13.5px; }
     th { background: #f8fafc; color: #475569; }
@@ -507,55 +495,52 @@ ADMIN_HTML = """<!DOCTYPE html>
 <body>
   <div class="container">
     <div class="header-bar">
-      <h1>⚙️ JEI Control Panel (Products & Customer Leads)</h1>
+      <h1>⚙️ JEI Control Panel</h1>
       <span style="font-size: 12px; color: #64748b;">Logged in as Admin</span>
     </div>
 
-    <!-- Product Creation Form -->
     <div class="card">
       <h2>➕ Add New Product / Machine with Photos</h2>
       <form onsubmit="addProduct(event)">
         <div class="form-grid">
           <div>
-            <label>Product Name (යන්ත්‍රයේ නම) *</label>
-            <input type="text" id="pName" placeholder="උදා: Silky Water Mist Polisher" required>
+            <label>Product Name *</label>
+            <input type="text" id="pName" placeholder="Silky Water Mist Polisher" required>
           </div>
           <div>
-            <label>Category (කාණ්ඩය) *</label>
-            <input type="text" id="pCategory" placeholder="උදා: Polishers / Rice Mill" required>
+            <label>Category *</label>
+            <input type="text" id="pCategory" placeholder="Polishers" required>
           </div>
           <div>
-            <label>Price / Estimated Cost (මිල) *</label>
-            <input type="text" id="pPrice" placeholder="උදා: Rs. 650,000 / Contact Sales" required>
+            <label>Price *</label>
+            <input type="text" id="pPrice" placeholder="Rs. 650,000" required>
           </div>
           <div>
-            <label>Photo Image URL (ඡායාරූප Link එක) *</label>
+            <label>Photo Image URL *</label>
             <input type="url" id="pImage" placeholder="https://example.com/image.jpg" required>
           </div>
           <div class="form-full">
-            <label>Specifications / Features (තාක්ෂණික විස්තර) *</label>
-            <input type="text" id="pSpecs" placeholder="උදා: ධාරිතාව: 2 Ton/hr | 15HP Motor | High Gloss Polish" required>
+            <label>Specifications *</label>
+            <input type="text" id="pSpecs" placeholder="ධාරිතාව: 2 Ton/hr | 15HP Motor" required>
           </div>
           <div class="form-full">
-            <label>Description & Customer Pitch (සම්පූර්ණ විස්තරය) *</label>
-            <textarea id="pDesc" rows="2" placeholder="යන්ත්‍රයේ භාවිතය සහ වාසි විස්තර කරන්න..." required></textarea>
+            <label>Description *</label>
+            <textarea id="pDesc" rows="2" placeholder="යන්ත්‍රයේ විස්තරය..." required></textarea>
           </div>
         </div>
         <button type="submit" class="btn-add">Save & Train AI Assistant →</button>
       </form>
     </div>
 
-    <!-- Current Products Grid -->
     <div class="card">
-      <h2>📦 Active Products Catalog in AI Knowledge Base ({PROD_COUNT})</h2>
+      <h2>📦 Active Products Catalog ({PROD_COUNT})</h2>
       <div class="prod-grid">
         {PRODUCT_CARDS}
       </div>
     </div>
 
-    <!-- Customer Leads Table -->
     <div class="card">
-      <h2>🎯 Customer Leads & Inquiries Recorded</h2>
+      <h2>🎯 Customer Leads Recorded</h2>
       <table>
         <thead>
           <tr>
@@ -594,7 +579,7 @@ ADMIN_HTML = """<!DOCTYPE html>
       });
 
       if (res.ok) {
-        alert('✅ Product added successfully and AI is retrained!');
+        alert('✅ Product added successfully!');
         window.location.reload();
       } else {
         alert('❌ Error adding product.');
@@ -617,9 +602,6 @@ ADMIN_HTML = """<!DOCTYPE html>
 </html>
 """
 
-# ==========================================
-# 🚀 API ENDPOINTS & LOGIC
-# ==========================================
 class RegisterPayload(BaseModel):
     name: str
     phone: str
@@ -660,7 +642,10 @@ async def register_lead(payload: RegisterPayload):
 @app.post("/api/chat")
 async def chat(payload: ChatPayload):
     if not GEMINI_API_KEY:
-        return JSONResponse(status_code=500, content={"reply": "GEMINI_API_KEY Render එකේ සකසා නැත."})
+        return JSONResponse(
+            status_code=200, 
+            content={"reply": "⚠️ Render Environment Variables වල 'GEMINI_API_KEY' එක දමා නැත. කරුණාකර Render.com Dashboard එකේ Environment Variables වෙත ගොස් GEMINI_API_KEY එක ඇතුළත් කරන්න."}
+        )
 
     current_prompt = build_dynamic_system_prompt()
     products = load_products()
@@ -673,35 +658,38 @@ async def chat(payload: ChatPayload):
         if any(w in user_q_lower for w in p_name_words if len(w) > 3) or p["category"].lower() in user_q_lower:
             matched_products.append(p)
 
+    # Simplified plain conversation contents
     contents = []
     for h in payload.history:
         role = "user" if h.get("role") == "user" else "model"
         contents.append({
             "role": role,
-            "parts": [{"text": h.get("content", "")}]
+            "parts": [{"text": str(h.get("content", ""))}]
         })
     
     contents.append({
         "role": "user",
-        "parts": [{"text": payload.message}]
+        "parts": [{"text": str(payload.message)}]
     })
 
+    # Robust Google Gemini REST endpoints
     endpoints_to_try = [
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     ]
 
     body = {
-        "system_instruction": {
+        "contents": contents,
+        "systemInstruction": {
             "parts": [{"text": current_prompt}]
         },
-        "contents": contents,
         "generationConfig": {
             "temperature": 0.2
         }
     }
 
+    last_error_text = ""
     for url in endpoints_to_try:
         try:
             res = requests.post(url, json=body, timeout=25)
@@ -715,12 +703,19 @@ async def chat(payload: ChatPayload):
                 
                 return {
                     "reply": reply,
-                    "matched_products": matched_products[:2] # Top matching photos
+                    "matched_products": matched_products[:2]
                 }
-        except Exception:
+            else:
+                last_error_text = f"HTTP {res.status_code}: {res.text[:200]}"
+        except Exception as e:
+            last_error_text = str(e)
             continue
 
-    return JSONResponse(status_code=500, content={"reply": "තාක්ෂණික දෝෂයක්. කරුණාකර මොහොතකින් නැවත විමසන්න."})
+    # Return clear readable error to UI
+    return JSONResponse(
+        status_code=200, 
+        content={"reply": f"⚠️ AI Engine සම්බන්ධතා දෝෂයකි: {last_error_text}"}
+    )
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(key: str = ""):
@@ -729,7 +724,6 @@ async def admin_panel(key: str = ""):
     
     products = load_products()
     
-    # Render product cards
     prod_cards_html = ""
     for p in products:
         prod_cards_html += f"""
@@ -747,7 +741,6 @@ async def admin_panel(key: str = ""):
     if not prod_cards_html:
         prod_cards_html = "<p style='color:#94a3b8; font-size:13px;'>No products added yet.</p>"
 
-    # Render lead rows
     lead_rows = ""
     for lead in reversed(LEADS_DB):
         lead_rows += f"<tr><td>{lead['time']}</td><td><b>{lead['name']}</b></td><td><span class='badge'>{lead['phone']}</span></td><td>{lead['location']}</td></tr>"
