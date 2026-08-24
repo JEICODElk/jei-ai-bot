@@ -83,7 +83,7 @@ SERVICES: Custom mill layout design, islandwide delivery & installation, genuine
 
 CRITICAL INSTRUCTIONS:
 1. TRILINGUAL SUPPORT:
-   - If user asks in Sinhala or Singlish -> Reply ONLY in proper SINHALA SCRIPT (පිරිසිදු සිංහලෙන්).
+   - If user asks in Sinhala or Singlish -> Reply ONLY in proper SINHALA SCRIPT (පිරිසිදු සිංහලෙන්). Never write Sinhala words in English letters.
    - If user asks in Tamil -> Reply ONLY in TAMIL SCRIPT (தமிழ்).
    - If user asks in English -> Reply ONLY in professional ENGLISH.
 2. DOMAIN BOUNDARY:
@@ -101,6 +101,39 @@ def send_telegram_alert(text: str):
             requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}, timeout=5)
         except Exception:
             pass
+
+# Find available working model dynamically
+CACHED_WORKING_MODEL = None
+
+def get_best_available_model():
+    global CACHED_WORKING_MODEL
+    if CACHED_WORKING_MODEL:
+        return CACHED_WORKING_MODEL
+    
+    if not GEMINI_API_KEY:
+        return None
+    
+    try:
+        # Check available models for this specific API key
+        list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+        res = requests.get(list_url, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
+            models = [m.get("name", "") for m in data.get("models", []) if "generateContent" in m.get("supportedGenerationMethods", [])]
+            
+            # Prefer flash models
+            for preferred in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-8b", "gemini-1.5-flash", "gemini-pro"]:
+                for m in models:
+                    if preferred in m:
+                        CACHED_WORKING_MODEL = m.replace("models/", "")
+                        return CACHED_WORKING_MODEL
+            if models:
+                CACHED_WORKING_MODEL = models[0].replace("models/", "")
+                return CACHED_WORKING_MODEL
+    except Exception:
+        pass
+    
+    return "gemini-2.0-flash"
 
 FRONTEND_HTML = """<!DOCTYPE html>
 <html lang="en">
@@ -644,13 +677,12 @@ async def chat(payload: ChatPayload):
     if not GEMINI_API_KEY:
         return JSONResponse(
             status_code=200, 
-            content={"reply": "⚠️ Render Environment Variables වල 'GEMINI_API_KEY' එක දමා නැත. කරුණාකර Render.com Dashboard එකේ Environment Variables වෙත ගොස් GEMINI_API_KEY එක ඇතුළත් කරන්න."}
+            content={"reply": "⚠️ Render Environment Variables වල 'GEMINI_API_KEY' එක දමා නැත."}
         )
 
     current_prompt = build_dynamic_system_prompt()
     products = load_products()
 
-    # Match user query keywords to product names for rich photo attachment
     matched_products = []
     user_q_lower = payload.message.lower()
     for p in products:
@@ -658,7 +690,7 @@ async def chat(payload: ChatPayload):
         if any(w in user_q_lower for w in p_name_words if len(w) > 3) or p["category"].lower() in user_q_lower:
             matched_products.append(p)
 
-    # Simplified plain conversation contents
+    # Simplified messages structure
     contents = []
     for h in payload.history:
         role = "user" if h.get("role") == "user" else "model"
@@ -672,11 +704,15 @@ async def chat(payload: ChatPayload):
         "parts": [{"text": str(payload.message)}]
     })
 
-    # Robust Google Gemini REST endpoints
+    # Auto-detected valid model
+    active_model = get_best_available_model()
+
     endpoints_to_try = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={GEMINI_API_KEY}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={GEMINI_API_KEY}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
     ]
 
     body = {
@@ -706,15 +742,14 @@ async def chat(payload: ChatPayload):
                     "matched_products": matched_products[:2]
                 }
             else:
-                last_error_text = f"HTTP {res.status_code}: {res.text[:200]}"
+                last_error_text = res.text[:200]
         except Exception as e:
             last_error_text = str(e)
             continue
 
-    # Return clear readable error to UI
     return JSONResponse(
         status_code=200, 
-        content={"reply": f"⚠️ AI Engine සම්බන්ධතා දෝෂයකි: {last_error_text}"}
+        content={"reply": f"⚠️ Error connecting to Gemini API: {last_error_text}"}
     )
 
 @app.get("/admin", response_class=HTMLResponse)
