@@ -1,23 +1,23 @@
 import os
+import google.generativeai as genai
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
 
-app = FastAPI(title="JEI Chatbot")
+app = FastAPI(title="JEI AI Chatbot")
 
 # Setup templates and static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# Gemini Client
-api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key) if api_key else None
+# Configure Gemini API
+API_KEY = os.getenv("GEMINI_API_KEY")
+if API_KEY:
+    genai.configure(api_key=API_KEY)
 
-# JEI Product Catalog
+# JEI Official Products Catalog
 JEI_PRODUCTS_KNOWLEDGE = """
 COMPANY: Janaka Engineering Industries (Pvt) Ltd (JEI) - Since 2000
 LOCATION & CONTACT: Sri Lanka | Hotline: +94 77 123 4567 | Email: info@jei.lk | Web: https://www.jei.lk
@@ -47,13 +47,13 @@ RULES:
    - Always reply in the EXACT language used by the customer: Sinhala (සිංහල / Singlish), Tamil (தமிழ்), or English.
 2. STRICT PRODUCT BOUNDARY:
    - Only answer questions related to JEI rice mill machinery, engineering equipment, and company services.
-   - Data reference:
+   - Reference Data:
    {JEI_PRODUCTS_KNOWLEDGE}
-   - If asked about anything outside (politics, general trivia, weather, homework, other brands), politely decline:
+   - If asked about anything outside (politics, general knowledge, weather, homework, other brands), politely decline:
      * Sinhala: "සමාවන්න, මට පිළිතුරු දිය හැක්කේ ජනක ඉංජිනේරු සමාගමේ (JEI) නිෂ්පාදන සහ සේවාවන් පිළිබඳව පමණි."
      * Tamil: "மன்னிக்கவும், ஜனக இன்ஜினியரிங் (JEI) தயாரிப்புகள் மற்றும் சேவைகள் தொடர்பான கேள்விகளுக்கு மட்டுமே என்னால் பதிலளிக்க முடியும்."
      * English: "I can only assist with inquiries regarding Janaka Engineering Industries (JEI) products and services."
-3. Keep answers polite, accurate, and professional.
+3. Keep answers polite, accurate, concise, and professional.
 """
 
 class ChatRequest(BaseModel):
@@ -66,25 +66,22 @@ async def home(request: Request):
 
 @app.post("/api/chat")
 async def chat(req: ChatRequest):
-    if not client:
-        return JSONResponse(status_code=500, content={"reply": "API Key is not configured."})
+    if not API_KEY:
+        return JSONResponse(status_code=500, content={"reply": "GEMINI_API_KEY is not set in Render."})
     
     try:
-        contents = []
-        for h in req.history:
-            role = "user" if h.get("role") == "user" else "model"
-            contents.append(types.Content(role=role, parts=[types.Part.from_text(text=h.get("content", ""))]))
-        
-        contents.append(types.Content(role="user", parts=[types.Part.from_text(text=req.message)]))
-
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.2
-            )
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT
         )
+        
+        # Format chat history
+        chat_session = model.start_chat(history=[
+            {"role": "user" if h.get("role") == "user" else "model", "parts": [h.get("content", "")]}
+            for h in req.history
+        ])
+        
+        response = chat_session.send_message(req.message)
         return {"reply": response.text}
     except Exception as e:
         return JSONResponse(status_code=500, content={"reply": f"දෝෂයක් සිදු විය: {str(e)}"})
