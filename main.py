@@ -14,38 +14,95 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "jei@2026")
 
 LEADS_DB = []
 
-JEI_KNOWLEDGE = """
-COMPANY: Janaka Engineering Industries (Pvt) Ltd (JEI) - Since 2000
-HOTLINE: +94 77 123 4567 | EMAIL: info@jei.lk | WEB: https://www.jei.lk
-PRODUCTS (12 CATEGORIES):
-1. Small Scale Rice Mill: For mini millers. Low power, high efficiency, minimal broken rice.
-2. Medium Scale Rice Mill: Semi-auto line (destoner, huller, separator, polisher).
-3. Large Scale Industrial Mill: Fully automated commercial milling plants.
-4. Color Sorter & Packing Machine: Optical CCD color sorter & auto packaging.
-5. Graders: Classifies head rice, broken grains, and impurities.
-6. Polishers: Silky water mist and dry polishers.
-7. Dryers: Recirculating & batch paddy dryers.
-8. Steam Boilers: Biomass/diesel boilers for parboiled rice.
-9. Motors & Bearings: Heavy duty motors & industrial bearings.
-10. Grass Cutters: Agricultural weeders and trimmers.
-11. Farm Equipment: Advanced agriculture machines and tools.
-12. Solar PV: Commercial rooftop solar & inverters for factories.
+# ==========================================
+# 📌 DETAILED KNOWLEDGE BASE FOR MODEL TRAINING
+# (Neengal thevaiyana extra products/details-ai inge add seithukollalaam)
+# ==========================================
+JEI_TRAINED_KNOWLEDGE = """
+COMPANY OVERVIEW:
+- Company Name: Janaka Engineering Industries (Pvt) Ltd (JEI)
+- Established: 2000 (Over 24+ years of industrial engineering excellence in Sri Lanka)
+- Headquarters / Factory: Industrial Zone , Laskhauyana,Polonnaruwa,Srilanka.
+- Hotline / WhatsApp: +94 27 222 38 48  / +94 77 193 15 92 
+- Official Email: info@jei.lk 
+- Official Website: https://www.jei.lk
 
-SERVICES: Custom mill layout design, islandwide installation, genuine spare parts, and technician training.
+CORE PRODUCT CATALOG & DETAILED SPECIFICATIONS:
+
+1. Small Scale Rice Mill Machines (කුඩා පරිමාණ වී මෝල්):
+   - Capacity: 500 kg/hr to 1,000 kg/hr (1 Ton/hr)
+   - Ideal for: Small scale farmers, mini commercial millers, self-employment.
+   - Features: Low electricity consumption (Single phase / 3 Phase), compact footprint, minimal broken rice rate (<5%), high husk separation efficiency.
+
+2. Medium Scale Semi-Automated Rice Mill Plants (මධ්‍යම පරිමාණ වී මෝල්):
+   - Capacity: 1.5 Tons/hr to 4 Tons/hr.
+   - Included Components: Paddy Cleaner & Destoner (ගල් සහ කුණු ඉවත් කිරීම), Rubber Roll Huller (පොතු ඇරීම), Paddy Gravity Separator (වී සහ සහල් වෙන් කිරීම), Mist Polisher, and Rice Sizing Grader.
+   - Power Requirement: 3-Phase Industrial (25 kW - 60 kW).
+
+3. Large Scale Commercial Industrial Rice Mills (මහා පරිමාණ ස්වයංක්‍රීය වී මෝල්):
+   - Capacity: 5 Tons/hr up to 20 Tons/hr fully automated turnkey processing lines.
+   - Automation: Touchscreen PLC Control Panels, Bucket Elevators, Continuous flow monitoring, dust extraction cyclones.
+
+4. Optical CCD Color Sorter & Auto Packing Machines (වර්ණ තේරීමේ සහ ඇසුරුම් යන්ත්‍ර):
+   - Color Sorter: High-resolution RGB CCD Cameras, 64 to 384 channels/chutes, ejects discolored, black, yellow, chalky grains and foreign matters with 99.9% accuracy.
+   - Auto Packing Machine: 5kg, 10kg, 25kg, 50kg automatic weighing, pneumatic bag filling, and heat/thread sealing units.
+
+5. Precision Rice Polishers (සහල් ඔප දැමීමේ යන්ත්‍ර):
+   - Water Mist Silky Polishers: Adds high shine, smooth surface, and extends shelf life without breaking the kernel.
+   - Friction Dry Polishers with adjustable airflow cooling.
+
+6. Rice Mill Dryers (වී වේළන යන්ත්‍ර):
+   - Recirculating Batch Dryers (6 Ton, 10 Ton, 20 Ton capacities).
+   - Low temperature uniform drying to prevent grain cracking and preserve seed germination.
+
+7. Parboiling Steam Boilers (තැම්බූ සහල් බොයිලේරු පද්ධති):
+   - Biomass (Paddy Husk fired / Firewood) and Diesel operated industrial boilers.
+   - Fully safety certified pressure vessels with automated water feed.
+
+8. Heavy Duty Electric Motors & Bearings:
+   - High torque 3-phase IE2/IE3 energy efficient induction motors, genuine SKF / NTN / NSK industrial bearings.
+
+9. Agriculture Machinery & Grass Cutters:
+   - 2-Stroke / 4-Stroke backpack & side-mount weeders, brush cutters, power sprayers, power tillers.
+
+10. Commercial Solar PV & Hybrid Inverters:
+    - Industrial rooftop solar systems (10 kW to 250 kW) to reduce factory electricity tariffs.
+
+WARRANTY, SPARE PARTS & AFTER-SALES SERVICES:
+- Warranty: 1 to 2 Years comprehensive company warranty for all machinery.
+- Spare Parts: 100% genuine rubber rollers, screens, emery stones, elevator belts, conveyor buckets readily available in stock.
+- Services: Islandwide on-site installation, factory foundation layout planning, operator training, and 24/7 technical breakdown support.
 """
 
+# ==========================================
+# 🎯 STRICT SYSTEM INSTRUCTION PROMPT
+# ==========================================
 SYSTEM_PROMPT = f"""
-You are the Official AI Technical Support Specialist at Janaka Engineering Industries (JEI).
-RULES:
-1. TRILINGUAL: Reply in the EXACT language of the user (Sinhala, Singlish, Tamil, or English).
-2. DOMAIN BOUNDARY: Strictly answer ONLY questions regarding JEI machinery, engineering, and services.
-   Reference Data:
-   {JEI_KNOWLEDGE}
-   If asked about unrelated topics (politics, general trivia, homework, other brands), politely decline:
-   - Sinhala: "සමාවන්න, මට පිළිතුරු දිය හැක්කේ ජනක ඉංජිනේරු සමාගමේ (JEI) නිෂ්පාදන සහ සේවාවන් පිළිබඳව පමණි."
-   - Tamil: "மன்னிக்கவும், ஜனக இன்ஜினியரிங் (JEI) தயாரிப்புகள் மற்றும் சேவைகள் தொடர்பான கேள்விகளுக்கு மட்டுமே என்னால் பதிலளிக்க முடியும்."
-   - English: "I can only assist with inquiries regarding Janaka Engineering Industries (JEI) products and services."
-3. Keep answers concise, highly professional, polite, and persuasive.
+You are the Official Chief Technical Sales AI Assistant for "Janaka Engineering Industries (Pvt) Ltd" (JEI).
+
+CRITICAL LANGUAGE RULES (MANDATORY):
+1. IF USER WRITES IN SINHALA OR SINGLISH:
+   - You MUST reply ONLY in clean, proper SINHALA SCRIPT (සිංහල අකුරෙන් පමණි).
+   - NEVER use Singlish (English letters for Sinhala words) in your response.
+2. IF USER WRITES IN TAMIL:
+   - You MUST reply ONLY in proper TAMIL SCRIPT (தமிழ் எழுத்துக்களில் மட்டும்).
+3. IF USER WRITES IN ENGLISH:
+   - You MUST reply ONLY in professional ENGLISH.
+
+STRICT DOMAIN BOUNDARY & ACCURACY:
+- ONLY answer questions related to JEI Rice Mill machinery, equipment, spare parts, and services using the following Knowledge Base:
+{JEI_TRAINED_KNOWLEDGE}
+- If the customer asks for details outside this knowledge (like general politics, sports, other companies, coding, homework):
+  * In Sinhala: "සමාවන්න, මට පිළිතුරු සැපයිය හැක්කේ ජනක ඉංජිනේරු සමාගමේ (JEI) නිෂ්පාදන, යන්ත්‍ර සූත්‍ර සහ සේවාවන් පිළිබඳව පමණි."
+  * In Tamil: "மன்னிக்கவும், ஜனக இன்ஜினியரிங் (JEI) தயாரிப்புகள் மற்றும் சேவைகள் தொடர்பான கேள்விகளுக்கு மட்டுமே என்னால் பதிலளிக்க முடியும்."
+  * In English: "I specialize exclusively in Janaka Engineering Industries (JEI) machinery, products, and technical services."
+
+FORMATTING & PRESENTATION RULES:
+- Never provide messy or unstructured paragraphs.
+- Always organize your response with:
+  1. Clear, bold titles/headings.
+  2. Clean bullet points (•) or numbered lists for specifications and features.
+  3. Polite, structured, and easy-to-read layout.
 """
 
 def send_telegram_alert(text: str):
@@ -85,9 +142,9 @@ FRONTEND_HTML = """<!DOCTYPE html>
     }
     .app-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 460px;
       height: 90vh;
-      max-height: 720px;
+      max-height: 740px;
       background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(12px);
       border-radius: 24px;
@@ -176,17 +233,19 @@ FRONTEND_HTML = """<!DOCTYPE html>
       flex-direction: column;
       gap: 12px;
     }
-    .msg { display: flex; flex-direction: column; max-width: 82%; }
+    .msg { display: flex; flex-direction: column; max-width: 86%; }
     .user { align-self: flex-end; }
     .bot { align-self: flex-start; }
     .bubble {
       padding: 12px 16px;
       font-size: 13.5px;
-      line-height: 1.5;
+      line-height: 1.6;
       border-radius: 18px;
+      white-space: pre-wrap;
     }
     .user .bubble { background: linear-gradient(135deg, #0284c7, #0369a1); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(2, 132, 199, 0.2); }
     .bot .bubble { background: white; color: #1e293b; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+    .bot .bubble strong { color: #0f172a; font-weight: 600; }
     
     .quick-chips {
       display: flex;
@@ -251,7 +310,6 @@ FRONTEND_HTML = """<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Registration Gate -->
     <div class="view-gate" id="gateView">
       <h2>Welcome to JEI Support</h2>
       <p>අපගේ ඉංජිනේරු නිෂ්පාදන සහ මිල ගණන් විමසීමට පෙර කරුණාකර ඔබගේ විස්තර ඇතුළත් කරන්න.</p>
@@ -273,25 +331,24 @@ FRONTEND_HTML = """<!DOCTYPE html>
       </form>
     </div>
 
-    <!-- Chat View -->
     <div class="view-chat" id="chatView">
       <div class="chat-messages" id="chatBox">
         <div class="msg bot">
           <div class="bubble" id="welcomeMsg">
-            <strong>ආයුබෝවන්! / வணக்கம்!</strong><br>
-            ජනක ඉංජිනේරු සමාගමේ (JEI) වී මෝල් යන්ත්‍ර සූත්‍ර, උපකරණ සහ සේවාවන් පිළිබඳව ඕනෑම විස්තරයක් විමසන්න.
+            <strong>ආයුබෝවන්! / வணக்கம்! / Welcome!</strong><br><br>
+            ජනක ඉංජිනේරු සමාගමේ (JEI) වී මෝල් යන්ත්‍ර සූත්‍ර, උපකරණ සහ සේවාවන් පිළිබඳව ඔබට අවශ්‍ය ඕනෑම විස්තරයක් විමසන්න.
           </div>
         </div>
       </div>
       
       <div class="quick-chips">
         <button class="chip" onclick="quickSend('කුඩා හා මධ්‍යම පරිමාණ වී මෝල් ගැන විස්තර ඕන')">🌾 වී මෝල් පද්ධති</button>
-        <button class="chip" onclick="quickSend('Color Sorter & Packing Machine details')">📦 Color Sorter</button>
+        <button class="chip" onclick="quickSend('Color Sorter & Packing Machine විස්තර')">📦 Color Sorter</button>
         <button class="chip" onclick="quickSend('Dryers සහ Steam Boilers ගැන කියන්න')">🔥 Dryers & Boilers</button>
       </div>
 
       <form class="chat-input-bar" onsubmit="handleSend(event)">
-        <input type="text" id="userInput" placeholder="ඔබට දැනගැනීමට අවශ්‍ය දේ මෙහි ලියන්න..." autocomplete="off" required>
+        <input type="text" id="userInput" placeholder="ඔබට දැනගැනීමට අවශ්‍ය දේ ලියන්න..." autocomplete="off" required>
         <button type="submit">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
         </button>
@@ -324,13 +381,19 @@ FRONTEND_HTML = """<!DOCTYPE html>
 
       gateView.style.display = 'none';
       chatView.style.display = 'flex';
-      document.getElementById('welcomeMsg').innerHTML = `<strong>ආයුබෝවන් ${name} මහත්මයා/මිය!</strong><br>ජනක ඉංජිනේරු සමාගමට ඔබව සාදරයෙන් පිළිගනිමු. අපගේ වී මෝල් සහ ඉංජිනේරු නිෂ්පාදන පිළිබඳව ඔබට අවශ්‍ය ඕනෑම විස්තරයක් විමසන්න.`;
+      document.getElementById('welcomeMsg').innerHTML = `<strong>ආයුබෝවන් ${name} මහත්මයා/මිය!</strong><br><br>ජනක ඉංජිනේරු සමාගමට (JEI) ඔබව සාදරයෙන් පිළිගනිමු. අපගේ වී මෝල් යන්ත්‍ර සූත්‍ර, උපකරණ සහ සේවාවන් පිළිබඳව ඔබට අවශ්‍ය ඕනෑම විස්තරයක් විමසන්න.`;
+    }
+
+    function formatText(text) {
+      return text
+        .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
+        .replace(/\\n/g, '<br>');
     }
 
     function appendMsg(role, text) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `msg ${role}`;
-      msgDiv.innerHTML = `<div class="bubble">${text.replace(/\\n/g, '<br>')}</div>`;
+      msgDiv.innerHTML = `<div class="bubble">${formatText(text)}</div>`;
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
     }
@@ -432,7 +495,7 @@ async def register_lead(payload: RegisterPayload):
     }
     LEADS_DB.append(lead)
 
-    alert_msg = f"🔥 <b>New Customer Registered!</b>\n👤 <b>Name:</b> {payload.name}\n📞 <b>Phone:</b> <code>{payload.phone}</code>\n📍 <b>Location:</b> {payload.location}"
+    alert_msg = f"🔥 <b>New Customer Lead!</b>\n👤 <b>Name:</b> {payload.name}\n📞 <b>Phone:</b> <code>{payload.phone}</code>\n📍 <b>Location:</b> {payload.location}"
     send_telegram_alert(alert_msg)
 
     return {"status": "success"}
@@ -461,12 +524,12 @@ async def chat(payload: ChatPayload):
         },
         "contents": contents,
         "generationConfig": {
-            "temperature": 0.2
+            "temperature": 0.1
         }
     }
 
-    # Dynamic models priority queue (gemini-3.6-flash, gemini-2.5-flash, gemini-2.0-flash)
-    candidate_models = ["gemini-3.6-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    # High speed stable models
+    candidate_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
     
     for model_name in candidate_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={GEMINI_API_KEY}"
@@ -482,7 +545,7 @@ async def chat(payload: ChatPayload):
         except Exception:
             continue
 
-    return JSONResponse(status_code=500, content={"reply": "AI Engine සම්බන්ධ කරගැනීමේ දෝෂයක්. කරුණාකර නැවත උත්සාහ කරන්න."})
+    return JSONResponse(status_code=500, content={"reply": "තාක්ෂණික දෝෂයක් සිදු විය. කරුණාකර මොහොතකින් නැවත උත්සාහ කරන්න."})
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_panel(key: str = ""):
