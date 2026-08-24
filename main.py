@@ -1,15 +1,12 @@
 import os
-import google.generativeai as genai
-from fastapi import FastAPI, HTTPException
+import requests
+from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
 app = FastAPI(title="JEI AI Chatbot")
 
-# Configure Gemini API Key
 API_KEY = os.getenv("GEMINI_API_KEY")
-if API_KEY:
-    genai.configure(api_key=API_KEY)
 
 # JEI Official Products Catalog
 JEI_PRODUCTS_KNOWLEDGE = """
@@ -50,7 +47,7 @@ RULES:
 3. Keep answers polite, accurate, concise, and professional.
 """
 
-# All-in-One HTML Page
+# All-in-One Frontend HTML Page
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,20 +241,52 @@ async def serve_home():
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatPayload):
     if not API_KEY:
-        return JSONResponse(status_code=500, content={"reply": "GEMINI_API_KEY is not set in Render."})
+        return JSONResponse(status_code=500, content={"reply": "GEMINI_API_KEY is missing in Render Environment Variables."})
+
+    # Prepare conversation history for Gemini REST API
+    contents = []
+    for h in payload.history:
+        role = "user" if h.get("role") == "user" else "model"
+        contents.append({
+            "role": role,
+            "parts": [{"text": h.get("content", "")}]
+        })
     
+    contents.append({
+        "role": "user",
+        "parts": [{"text": payload.message}]
+    })
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={API_KEY}"
+    
+    body = {
+        "system_instruction": {
+            "parts": [{"text": SYSTEM_PROMPT}]
+        },
+        "contents": contents,
+        "generationConfig": {
+            "temperature": 0.2
+        }
+    }
+
     try:
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
-            system_instruction=SYSTEM_PROMPT
-        )
-        
-        chat_session = model.start_chat(history=[
-            {"role": "user" if h.get("role") == "user" else "model", "parts": [h.get("content", "")]}
-            for h in payload.history
-        ])
-        
-        response = chat_session.send_message(payload.message)
-        return {"reply": response.text}
+        res = requests.post(url, json=body, timeout=30)
+        data = res.json()
+
+        if res.status_code == 200:
+            ai_text = data["candidates"][0]["content"]["parts"][0]["text"]
+            return {"reply": ai_text}
+        else:
+            # Fallback to gemini-2.0-flash if 2.5 has restrictions
+            fallback_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+            fb_res = requests.post(fallback_url, json=body, timeout=30)
+            fb_data = fb_res.json()
+            if fb_res.status_code == 200:
+                ai_text = fb_data["candidates"][0]["content"]["parts"][0]["text"]
+                return {"reply": ai_text}
+            
+            err_msg = data.get("error", {}).get("message", "AI Engine Error")
+            return JSONResponse(status_code=500, content={"reply": f"දෝෂයක්: {err_msg}"})
+
     except Exception as e:
-        return JSONResponse(status_code=500, content={"reply": f"තාක්ෂණික දෝෂයක්: {str(e)}"})
+        return JSONResponse(status_code=500, content={"reply": f"සම්බන්ධතා දෝෂයක්: {str(e)}"})
