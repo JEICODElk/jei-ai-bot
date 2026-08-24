@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JEI AI Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="chat-container">
+    <header class="header">
+      <h2>Janaka Engineering (JEI) AI</h2>
+      <p>සිංහල / English / தமிழ்</p>
+    </header>
+    <div id="chatBox" class="chat-box">
+      <div class="bot-msg">
+        <div class="bubble">
+          <strong>ආයුබෝවන්! / வணக்கம்! / Welcome!</strong><br>
+          ජනක ඉංජිනේරු සමාගමේ (JEI) වී මෝල් යන්ත්‍ර සහ සේවාවන් පිළිබඳ ඕනෑම විස්තරයක් විමසන්න.
+        </div>
+      </div>
+    </div>
+    <form id="chatForm" onsubmit="sendMessage(event)">
+      <input type="text" id="userInput" placeholder="ඔබේ ප්‍රශ්නය මෙහි ලියන්න..." required autocomplete="off">
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script src="/static/script.js"></script>
+</body>
+</html>
